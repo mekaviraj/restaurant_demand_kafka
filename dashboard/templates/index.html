@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Restaurant Demand & Kafka Semantics Dashboard</title>
+  <style>
+    body { font-family: monospace; margin: 20px; }
+    .stat { margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h1>Restaurant Demand Dashboard</h1>
+  <p>Refresh every 2 seconds.</p>
+
+  <div id="stats"></div>
+
+  <script>
+    async function fetchStats() {
+      const res = await fetch("/stats");
+      const data = await res.json();
+      const statsDiv = document.getElementById("stats");
+      let html = `
+        <div class="stat">Total orders seen: ${data.total_orders}</div>
+      `;
+      if (data.mode_summary) {
+        Object.entries(data.mode_summary).forEach(([mode, s]) => {
+          html += `
+            <div class="stat">
+              Mode: <strong>${mode}</strong> → Received: ${s.received}
+            </div>
+          `;
+        });
+      }
+      statsDiv.innerHTML = html;
+    }
+    setInterval(fetchStats, 2000);
+  </script>
+</body>
+</html>
