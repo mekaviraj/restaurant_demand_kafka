@@ -1,38 +1,316 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Restaurant Demand & Kafka Semantics Dashboard</title>
-  <style>
-    body { font-family: monospace; margin: 20px; }
-    .stat { margin: 10px 0; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Delivery Order Reliability Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+            background: radial-gradient(circle at 20% 10%, #2f80ed 0%, #6d5dfc 40%, #2a2558 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+
+        .sub {
+            color: #5b6378;
+            font-size: 1.05em;
+        }
+
+        .mode-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 22px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border-left: 6px solid #2f80ed;
+        }
+
+        .mode-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .mode-pill {
+            padding: 8px 14px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 700;
+            font-size: 0.92em;
+            background: #2f80ed;
+        }
+
+        .mode-help {
+            color: #475066;
+            line-height: 1.45;
+            font-size: 0.95em;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border-top: 5px solid #2f80ed;
+        }
+
+        .metric-card h3 {
+            color: #5c637a;
+            font-size: 0.95em;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .metric-value {
+            font-size: 2em;
+            font-weight: 800;
+            color: #1f2433;
+            font-family: "Courier New", monospace;
+        }
+
+        .indicator {
+            margin-top: 8px;
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.82em;
+            font-weight: 700;
+            color: white;
+        }
+
+        .ind-good {
+            background: #17b26a;
+        }
+
+        .ind-bad {
+            background: #ef4444;
+        }
+
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 18px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+        }
+
+        .panel h2 {
+            margin-bottom: 12px;
+            color: #1f2433;
+            font-size: 1.25em;
+        }
+
+        .explain-list {
+            line-height: 1.55;
+            color: #4a546d;
+            font-size: 0.95em;
+        }
+
+        .feed-item {
+            border: 1px solid #e8ebf3;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #f9fbff;
+        }
+
+        .feed-main {
+            font-weight: 700;
+            color: #1f2433;
+            margin-bottom: 4px;
+        }
+
+        .feed-sub {
+            font-size: 0.88em;
+            color: #667085;
+        }
+
+        .timestamp {
+            text-align: center;
+            color: #dce3ff;
+            font-size: 0.9em;
+            margin-top: 18px;
+        }
+
+        @media (max-width: 900px) {
+            .layout-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>Restaurant Demand Dashboard</h1>
-  <p>Refresh every 2 seconds.</p>
+    <div class="container">
+        <div class="header">
+            <h1>Food Delivery Order Reliability Dashboard</h1>
+            <p class="sub">Real-time monitoring for Swiggy/Zomato-style order pipelines using Kafka + Spark</p>
+        </div>
 
-  <div id="stats"></div>
-
-  <script>
-    async function fetchStats() {
-      const res = await fetch("/stats");
-      const data = await res.json();
-      const statsDiv = document.getElementById("stats");
-      let html = `
-        <div class="stat">Total orders seen: ${data.total_orders}</div>
-      `;
-      if (data.mode_summary) {
-        Object.entries(data.mode_summary).forEach(([mode, s]) => {
-          html += `
-            <div class="stat">
-              Mode: <strong>${mode}</strong> → Received: ${s.received}
+        <div class="mode-panel">
+            <div class="mode-title">
+                <h2>Current Kafka Processing Mode</h2>
+                <span class="mode-pill" id="current-mode">Unknown</span>
             </div>
-          `;
-        });
-      }
-      statsDiv.innerHTML = html;
-    }
-    setInterval(fetchStats, 2000);
-  </script>
+            <p class="mode-help" id="mode-help">
+                At Most Once -> Fast but orders may be lost. At Least Once -> No loss but duplicates possible.
+                Exactly Once -> Perfect processing (no loss, no duplicates).
+            </p>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <h3>Total Orders Received</h3>
+                <div class="metric-value" id="total-orders">0</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Unique Orders</h3>
+                <div class="metric-value" id="unique-orders">0</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Duplicate Orders</h3>
+                <div class="metric-value" id="duplicate-orders">0</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Accuracy %</h3>
+                <div class="metric-value" id="accuracy">100.0%</div>
+                <span id="accuracy-indicator" class="indicator ind-good">Healthy</span>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <div class="panel">
+                <h2>Reliability Insights</h2>
+                <div class="explain-list">
+                    <p><strong>Duplicate %:</strong> <span id="duplicate-percentage">0.0%</span></p>
+                    <p><strong>Estimated Loss:</strong> <span id="estimated-loss">0</span> orders</p>
+                    <p><strong>At Most Once:</strong> Fast but orders may be lost.</p>
+                    <p><strong>At Least Once:</strong> No loss expected but duplicate orders possible.</p>
+                    <p><strong>Exactly Once:</strong> Best for payment/inventory, no loss and no duplicates.</p>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>Live Order Feed</h2>
+                <div id="order-feed">
+                    <div class="feed-sub">Waiting for orders...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="timestamp" id="timestamp">Last updated: Never</div>
+    </div>
+
+    <script>
+        function modeLabel(mode) {
+            if (mode === 'at_most_once') return 'At Most Once';
+            if (mode === 'at_least_once') return 'At Least Once';
+            if (mode === 'exactly_once') return 'Exactly Once';
+            return 'Unknown';
+        }
+
+        function modeDescription(mode) {
+            if (mode === 'at_most_once') return 'At Most Once -> Fast but orders may be LOST.';
+            if (mode === 'at_least_once') return 'At Least Once -> No loss expected, but DUPLICATE orders may occur.';
+            if (mode === 'exactly_once') return 'Exactly Once -> Perfect processing with no loss and no duplicates.';
+            return 'Start any producer mode to observe reliability behavior.';
+        }
+
+        async function updateMetrics() {
+            try {
+                const response = await fetch('/api/metrics');
+                const data = await response.json();
+
+                document.getElementById('current-mode').textContent = modeLabel(data.kafka_mode);
+                document.getElementById('mode-help').textContent = modeDescription(data.kafka_mode);
+
+                document.getElementById('total-orders').textContent = data.total_orders;
+                document.getElementById('unique-orders').textContent = data.unique_orders;
+                document.getElementById('duplicate-orders').textContent = data.duplicate_orders;
+                document.getElementById('duplicate-percentage').textContent = (data.duplicate_percentage || 0).toFixed(1) + '%';
+                document.getElementById('accuracy').textContent = (data.accuracy || 0).toFixed(1) + '%';
+                document.getElementById('estimated-loss').textContent = data.estimated_loss || 0;
+
+                const indicator = document.getElementById('accuracy-indicator');
+                if ((data.accuracy || 0) >= 95) {
+                    indicator.className = 'indicator ind-good';
+                    indicator.textContent = 'Healthy';
+                } else {
+                    indicator.className = 'indicator ind-bad';
+                    indicator.textContent = 'Needs Attention';
+                }
+
+                const feed = document.getElementById('order-feed');
+                const orders = data.recent_orders || [];
+                if (orders.length === 0) {
+                    feed.innerHTML = '<div class="feed-sub">Waiting for orders...</div>';
+                } else {
+                    feed.innerHTML = orders.map((order) => `
+                        <div class="feed-item">
+                            <div class="feed-main">${order.order_id} • ${order.restaurant_name}</div>
+                            <div class="feed-sub">${order.item_name} • Rs ${order.total_price} • ${modeLabel(order.kafka_mode)}</div>
+                        </div>
+                    `).join('');
+                }
+
+                if (data.timestamp) {
+                    const date = new Date(data.timestamp);
+                    document.getElementById('timestamp').textContent = 
+                        'Last updated: ' + date.toLocaleTimeString();
+                }
+            } catch (error) {
+                console.error('Error fetching metrics:', error);
+                document.getElementById('timestamp').textContent = 
+                    'Last updated: Error fetching data';
+            }
+        }
+
+        updateMetrics();
+        setInterval(updateMetrics, 2000);
+    </script>
 </body>
 </html>

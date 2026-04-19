@@ -1,61 +1,217 @@
 # producer/producer.py
+"""
+Real-Time Food Delivery Order Producer
+======================================
+
+Demonstrates Kafka delivery guarantees with simulated order traffic:
+1. at_most_once  -> possible loss (simulated drops)
+2. at_least_once -> possible duplicates (simulated duplicates)
+3. exactly_once  -> no loss, no duplicates
+
+Usage:
+    python producer.py [at_most_once | at_least_once | exactly_once]
+
+Optional toggle:
+    export KAFKA_MODE=at_least_once
+    python producer.py
+"""
+
 from confluent_kafka import Producer
 import json
 import time
 import random
 import sys
+import uuid
+import os
+from datetime import datetime
 
-mode = sys.argv[1] if len(sys.argv) > 1 else "at_most_once"
+# Parse delivery mode
+mode = sys.argv[1].lower() if len(sys.argv) > 1 else os.getenv("KAFKA_MODE", "exactly_once").lower()
+if mode not in ["at_most_once", "at_least_once", "exactly_once"]:
+    print(f"Invalid mode '{mode}'. Choose: at_most_once, at_least_once, exactly_once")
+    sys.exit(1)
 
+RESTAURANTS = ["Dominos", "KFC", "Biryani House", "Pizza Hut", "Local Dhaba"]
+ITEMS = ["Burger", "Pizza", "Biryani", "Fried Rice", "Rolls"]
+ITEM_PRICES = {
+    "Burger": 129,
+    "Pizza": 249,
+    "Biryani": 219,
+    "Fried Rice": 179,
+    "Rolls": 149,
+}
+
+# ============================================
+# Kafka Configuration per Delivery Semantic
+# ============================================
 kafka_config = {
     "bootstrap.servers": "localhost:9092",
+    "client.id": f"producer-{mode}-{uuid.uuid4().hex[:8]}",
 }
 
 if mode == "at_most_once":
-    kafka_config.update({"acks": "0", "retries": 0})
+    # Fire-and-forget: Send and hope for the best
+    # acks=0: Don't wait for any acknowledgment
+    # retries=0: Don't retry on failure
+    print("\n🚨 AT-MOST-ONCE MODE: Fast, but order loss is possible")
+    kafka_config.update({
+        "acks": "0",
+        "retries": 0,
+    })
+
 elif mode == "at_least_once":
-    kafka_config.update({"acks": "all", "retries": 10})
+    # Guaranteed delivery but may duplicate: Persist before acknowledging
+    # acks=all: Wait for all in-sync replicas to acknowledge
+    # retries=10: Retry failed sends (can create duplicates if broker acks but fails to send to client)
+    print("\n📋 AT-LEAST-ONCE MODE: No order loss, but duplicates are possible")
+    kafka_config.update({
+        "acks": "all",
+        "retries": 10,
+        "max.in.flight.requests.per.connection": 5,  # May cause reordering on retry
+    })
+
 elif mode == "exactly_once":
+    # Exactly once: Idempotent + Transactional
+    # enable.idempotence=True: Deduplicates retried sends
+    # transactional.id: Enables transactions for atomic writes
+    print("\n✅ EXACTLY-ONCE MODE: Clean processing, no loss and no duplicates")
     kafka_config.update({
         "acks": "all",
         "retries": 10,
         "enable.idempotence": True,
-        "transactional.id": "tx1",
+        "transactional.id": f"producer-{mode}-{uuid.uuid4().hex[:8]}",
+        "max.in.flight.requests.per.connection": 5,
     })
 
 producer = Producer(kafka_config)
 
+# Initialize transactions for exactly-once mode
 if mode == "exactly_once":
     producer.init_transactions()
 
-def delivery_report(err, msg):
-    pass  # ignore for now
+# ============================================
+# Delivery Report Callback
+# ============================================
+sent_count = 0
+failed_count = 0
 
-def gen_order():
+def delivery_report(err, msg):
+    global sent_count, failed_count
+    if err is not None:
+        failed_count += 1
+        print(f"  ❌ Delivery failed: {err}")
+    else:
+        sent_count += 1
+
+# ============================================
+# Order Generation
+# ============================================
+def gen_order(order_id=None, sent_sequence=0):
+    """
+    Generate a realistic food delivery order event.
+    order_id is used downstream for deduplication.
+    """
+    if order_id is None:
+        order_id = str(uuid.uuid4())
+
+    item_name = random.choice(ITEMS)
+    quantity = random.randint(1, 5)
+    price_per_item = ITEM_PRICES[item_name]
+
     return {
-        "event_id": f"e{random.randint(1000,9999)}",
-        "restaurant_id": f"r{random.randint(1,5)}",
-        "dish_id": f"d{random.randint(1,10)}",
-        "quantity": random.randint(1, 3),
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
-        "state": "created"
+        "order_id": order_id,
+        "customer_id": f"cust_{random.randint(1000, 9999)}",
+        "restaurant_name": random.choice(RESTAURANTS),
+        "item_name": item_name,
+        "quantity": quantity,
+        "price_per_item": price_per_item,
+        "total_price": quantity * price_per_item,
+        "timestamp": datetime.utcnow().isoformat(),
+        "kafka_mode": mode,
+        "sent_sequence": sent_sequence,
+        "producer_sent_at": time.time(),
     }
 
-count = 0
-while True:
-    ev = gen_order()
-    s = json.dumps(ev)
+# ============================================
+# Send Orders
+# ============================================
+print(f"\n{'='*60}")
+print(f"Producer started in {mode.upper()} mode")
+print(f"{'='*60}")
 
-    if mode == "exactly_once":
-        producer.begin_transaction()
-        producer.produce("orders", s.encode("utf-8"), callback=delivery_report)
-        producer.commit_transaction()
-    else:
-        producer.produce("orders", s.encode("utf-8"), callback=delivery_report)
+total_count = 0
+dropped_simulated = 0
+duplicate_injected = 0
+try:
+    while True:
+        total_count += 1
 
-    count += 1
-    if count % 10 == 0:
-        print(f"Sent {count} orders (mode: {mode}) ...")
+        # Generate unique order
+        order_id = f"ORD-{mode[:3].upper()}-{int(time.time()*1000)}-{random.randint(1000,9999)}"
+        order = gen_order(order_id, sent_sequence=total_count)
+        
+        json_str = json.dumps(order)
 
-    producer.flush()
-    time.sleep(0.5)
+        # Simulated behavior per mode (to make demo differences visible)
+        if mode == "at_most_once" and random.random() < 0.20:
+            dropped_simulated += 1
+            if total_count % 5 == 0:
+                print(f"\n[{datetime.now().strftime('%H:%M:%S')}] "
+                      f"Sent: {sent_count} | Failed: {failed_count} | Dropped(sim): {dropped_simulated} "
+                      f"| Total Attempts: {total_count} (mode: {mode})")
+            time.sleep(random.uniform(0.5, 1.0))
+            continue
+
+        # Send based on mode
+        if mode == "exactly_once":
+            try:
+                producer.begin_transaction()
+                producer.produce(
+                    "orders",
+                    key=order_id.encode("utf-8"),
+                    value=json_str.encode("utf-8"),
+                    callback=delivery_report
+                )
+                producer.commit_transaction()
+            except Exception as e:
+                print(f"  ❌ Transaction failed: {e}")
+                failed_count += 1
+        else:
+            producer.produce(
+                "orders",
+                key=order_id.encode("utf-8"),
+                value=json_str.encode("utf-8"),
+                callback=delivery_report
+            )
+
+            if mode == "at_least_once" and random.random() < 0.25:
+                duplicate_injected += 1
+                producer.produce(
+                    "orders",
+                    key=order_id.encode("utf-8"),
+                    value=json_str.encode("utf-8"),
+                    callback=delivery_report
+                )
+
+        # Flush to ensure sends are dispatched
+        producer.flush(0)
+
+        # Log progress
+        if total_count % 5 == 0:
+            print(f"\n[{datetime.now().strftime('%H:%M:%S')}] " +
+                  f"Sent: {sent_count} | Failed: {failed_count} | Dropped(sim): {dropped_simulated} " +
+                  f"| DupInjected(sim): {duplicate_injected} | Total Attempts: {total_count} " +
+                  f"(mode: {mode})")
+
+        time.sleep(random.uniform(0.5, 1.0))
+
+except KeyboardInterrupt:
+    print("\n\n⏹  Producer interrupted. Flushing remaining messages...")
+    producer.flush(30)
+    print(f"\n📊 FINAL STATS:")
+    print(f"   Total Attempted Orders: {total_count}")
+    print(f"   Successfully Sent: {sent_count}")
+    print(f"   Failed: {failed_count}")
+    print(f"   Simulated Drops (at_most_once): {dropped_simulated}")
+    print(f"   Simulated Duplicates (at_least_once): {duplicate_injected}")
+    print(f"   Success Rate: {(sent_count/total_count*100):.1f}%" if total_count > 0 else "N/A")

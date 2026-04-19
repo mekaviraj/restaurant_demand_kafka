@@ -1,5 +1,14 @@
-confluent-kafka==2.3.0
+# Kafka Delivery Semantics Demo - Dependencies
+
+# Data Streaming
 pyspark==3.5.0
-pandas==2.0.3
-statsmodels==0.14.0
+confluent-kafka==2.3.0
+
+# Web Dashboard
 flask==3.0.0
+
+# Data Processing
+pandas==2.0.3
+
+# (Optional) Demand Forecasting
+statsmodels==0.14.0
