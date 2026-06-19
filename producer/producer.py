@@ -104,6 +104,58 @@ def delivery_report(err, msg):
         sent_count += 1
 
 # ============================================
+# Incident Simulation Setup
+# ============================================
+def get_active_incident():
+    state_file = "simulation_state.json"
+    if os.path.exists(state_file):
+        try:
+            with open(state_file, "r") as f:
+                data = json.load(f)
+                return data.get("active_incident", "normal")
+        except Exception:
+            pass
+    return "normal"
+
+INCIDENT_CONFIGS = {
+    "normal": {
+        "delay_prob": 0.05,
+        "prep_time_range": (12, 18),
+        "cancel_prob": 0.02
+    },
+    "kitchen_delay": {
+        "delay_prob": 0.45,
+        "prep_time_range": (25, 38),
+        "cancel_prob": 0.05
+    },
+    "courier_delay": {
+        "delay_prob": 0.55,
+        "prep_time_range": (12, 18),
+        "cancel_prob": 0.15
+    },
+    "weather_surge": {
+        "delay_prob": 0.65,
+        "prep_time_range": (15, 22),
+        "cancel_prob": 0.25
+    },
+    "staff_shortage": {
+        "delay_prob": 0.35,
+        "prep_time_range": (24, 32),
+        "cancel_prob": 0.10
+    },
+    "festival_rush": {
+        "delay_prob": 0.40,
+        "prep_time_range": (28, 38),
+        "cancel_prob": 0.08
+    },
+    "inventory_shortage": {
+        "delay_prob": 0.15,
+        "prep_time_range": (15, 20),
+        "cancel_prob": 0.30
+    }
+}
+
+# ============================================
 # Order Generation
 # ============================================
 def gen_order(order_id=None, sent_sequence=0):
@@ -117,6 +169,13 @@ def gen_order(order_id=None, sent_sequence=0):
     item_name = random.choice(ITEMS)
     quantity = random.randint(1, 5)
     price_per_item = ITEM_PRICES[item_name]
+    
+    incident = get_active_incident()
+    cfg = INCIDENT_CONFIGS.get(incident, INCIDENT_CONFIGS["normal"])
+    
+    prep_time = random.randint(*cfg["prep_time_range"])
+    is_delayed = random.random() < cfg["delay_prob"]
+    is_cancelled = random.random() < cfg["cancel_prob"]
 
     return {
         "order_id": order_id,
@@ -130,6 +189,12 @@ def gen_order(order_id=None, sent_sequence=0):
         "kafka_mode": mode,
         "sent_sequence": sent_sequence,
         "producer_sent_at": time.time(),
+        
+        # Operational Simulation Metrics
+        "prep_time_minutes": prep_time,
+        "is_delayed": is_delayed,
+        "is_cancelled": is_cancelled,
+        "incident_mode": incident
     }
 
 # ============================================
@@ -156,9 +221,10 @@ try:
         if mode == "at_most_once" and random.random() < 0.20:
             dropped_simulated += 1
             if total_count % 5 == 0:
+                incident = get_active_incident()
                 print(f"\n[{datetime.now().strftime('%H:%M:%S')}] "
                       f"Sent: {sent_count} | Failed: {failed_count} | Dropped(sim): {dropped_simulated} "
-                      f"| Total Attempts: {total_count} (mode: {mode})")
+                      f"| Total Attempts: {total_count} (mode: {mode}) | Incident Mode: {incident.upper()}")
             time.sleep(random.uniform(0.5, 1.0))
             continue
 
@@ -198,10 +264,11 @@ try:
 
         # Log progress
         if total_count % 5 == 0:
+            incident = get_active_incident()
             print(f"\n[{datetime.now().strftime('%H:%M:%S')}] " +
                   f"Sent: {sent_count} | Failed: {failed_count} | Dropped(sim): {dropped_simulated} " +
                   f"| DupInjected(sim): {duplicate_injected} | Total Attempts: {total_count} " +
-                  f"(mode: {mode})")
+                  f"(mode: {mode}) | Incident Mode: {incident.upper()}")
 
         time.sleep(random.uniform(0.5, 1.0))
 

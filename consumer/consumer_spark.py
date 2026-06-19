@@ -19,7 +19,7 @@ from pyspark.sql.functions import (
     col, from_json, window, count, sum as spark_sum, lit, 
     first, max as spark_max, min as spark_min, approx_count_distinct, to_json, struct, when, greatest
 )
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, BooleanType
 import os
 
 # Suppress verbose logging
@@ -43,6 +43,7 @@ spark = SparkSession.builder \
     .appName("KafkaDeliverySemanticsDemo") \
     .config("spark.sql.adaptive.enabled", "false") \
     .config("spark.sql.streaming.schemaInference", "true") \
+    .config("spark.sql.streaming.statefulOperator.checkCorrectness.enabled", "false") \
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("ERROR")
@@ -62,6 +63,10 @@ schema = StructType([
     StructField("kafka_mode", StringType(), True),
     StructField("sent_sequence", IntegerType(), True),
     StructField("producer_sent_at", DoubleType(), True),
+    StructField("prep_time_minutes", IntegerType(), True),
+    StructField("is_delayed", BooleanType(), True),
+    StructField("is_cancelled", BooleanType(), True),
+    StructField("incident_mode", StringType(), True),
 ])
 
 # ============================================
@@ -184,6 +189,10 @@ metrics_output = df_parsed.select(
         col("timestamp"),
         col("kafka_mode"),
         col("sent_sequence"),
+        col("prep_time_minutes"),
+        col("is_delayed"),
+        col("is_cancelled"),
+        col("incident_mode"),
         lit("received").alias("type")
     )).alias("value")
 )

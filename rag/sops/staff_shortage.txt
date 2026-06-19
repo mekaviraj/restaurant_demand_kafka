@@ -1,0 +1,15 @@
+STANDARD OPERATING PROCEDURE: STAFF SHORTAGE (RESTRICTED KITCHEN CAPACITY)
+ID: SOP-OPS-003
+Status: Approved
+
+Operational Context:
+This SOP is activated when the Average Prep Time increases and Cancellation Rate starts rising due to employee absenteeism or staffing shortages in the kitchen.
+
+Corrective Actions:
+1. Re-assign floor staff / front-of-house crew to prep-assembly and packing tables.
+2. Optimize the active menu by suspending dishes that require multiple preparation stations (e.g. customized multi-item meals).
+3. Authorize overtime bonuses (+2.0x hourly) for off-duty staff to immediately report for work.
+4. Notify customers on checkout that orders may take an additional 15 minutes due to high order volume.
+
+Expected Recovery Improvement: 20% improvement in kitchen capacity and order fulfillment.
+SOP Author: Human Resources & Kitchen Manager

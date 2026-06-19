@@ -111,6 +111,7 @@ Open a **FOURTH** terminal:
 cd ~/restaurant_demand_kafka
 spark-submit \
   --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1 \
+  --conf spark.sql.streaming.statefulOperator.checkCorrectness.enabled=false \
   consumer/consumer_spark.py
 ```
 

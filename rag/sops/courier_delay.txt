@@ -1,0 +1,15 @@
+STANDARD OPERATING PROCEDURE: COURIER DELAY (DELIVERY PARTNER SHORTAGE)
+ID: SOP-OPS-002
+Status: Approved
+
+Operational Context:
+This SOP is activated when the Delay Rate is high but preparation times are normal (under 18 mins), indicating order backlog is due to a shortage of delivery partners (couriers).
+
+Corrective Actions:
+1. Increase the delivery payout multiplier to 1.5x for active riders to attract nearby partners.
+2. Route high-priority orders to third-party premium logistics networks (e.g., Shadowfax, Borzoi) to clear pending orders.
+3. Automatically stack up to 2 orders per delivery courier if they are heading to the same delivery neighborhood.
+4. Notify customers of an updated delivery timeline (+15 mins) and issue a 10% discount coupon for the delay.
+
+Expected Recovery Improvement: 22% reduction in delivery delay.
+SOP Author: Logistics Lead

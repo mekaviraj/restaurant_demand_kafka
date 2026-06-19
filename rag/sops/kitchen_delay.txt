@@ -1,0 +1,15 @@
+STANDARD OPERATING PROCEDURE: KITCHEN DELAY (KITCHEN BOTTLENECK)
+ID: SOP-OPS-001
+Status: Approved
+
+Operational Context:
+This SOP is activated when the Average Preparation Time exceeds 25 minutes or a kitchen bottleneck is identified.
+
+Corrective Actions:
+1. Add one cook to Station B (Prep/Assembly Line) to assist with order bottlenecking.
+2. Prioritize high-volume / high-frequency dishes (e.g., standard burgers and simple biryani) to clear the queue.
+3. Temporarily pause low-demand/high-prep time items (e.g., gourmet custom items or platters) from the digital menu.
+4. Notify delivery couriers to wait an additional 10 minutes before arriving at the restaurant to minimize idle time.
+
+Expected Recovery Improvement: 28% reduction in preparation delay.
+SOP Author: Operations Director

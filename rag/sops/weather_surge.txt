@@ -1,0 +1,15 @@
+STANDARD OPERATING PROCEDURE: WEATHER SURGE (EXTREME WEATHER OPERATIONS)
+ID: SOP-OPS-006
+Status: Approved
+
+Operational Context:
+This SOP is activated during heavy rainfall, flooding, extreme heatwaves, or other weather disturbances that impact delivery courier speeds and courier availability.
+
+Corrective Actions:
+1. Restrict delivery operations to a maximum 2.5km radius from the store to ensure rider safety and reduce exposure.
+2. Enable "Weather Surcharge" (+30%) payout bonuses to encourage available delivery partners to log in.
+3. Automatically swap to double-bag thermal packaging to protect food from rain and heat.
+4. Notify customers on digital portals of extended delivery times (+20 mins) due to adverse weather safety protocols.
+
+Expected Recovery Improvement: 30% reduction in delay rate and safety index normalization.
+SOP Author: Safety & Operations Director

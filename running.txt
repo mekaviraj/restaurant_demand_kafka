@@ -1,0 +1,91 @@
+# RESTAURANT DEMAND KAFKA PROJECT - EXECUTION GUIDE
+
+## TERMINAL 1 - START ZOOKEEPER
+
+cd ~/kafka_demo/kafka_2.13-3.4.0
+
+bin/zookeeper-server-start.sh config/zookeeper.properties
+
+## TERMINAL 2 - START KAFKA BROKER
+
+cd ~/kafka_demo/kafka_2.13-3.4.0
+
+bin/kafka-server-start.sh config/server.properties
+
+## TERMINAL 3 - CREATE AND VERIFY TOPICS
+
+cd ~/kafka_demo/kafka_2.13-3.4.0
+
+# Create orders topic
+
+bin/kafka-topics.sh --create --topic orders --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+
+# Create metrics topic
+
+bin/kafka-topics.sh --create --topic metrics --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+
+# Verify topics
+
+bin/kafka-topics.sh --list --bootstrap-server localhost:9092
+
+## TERMINAL 4 - OPTIONAL SPARK STREAMING CONSUMER
+
+cd /mnt/c/Users/VIRAJ\ M/Desktop/code/KAFKA_new/restaurant_demand_kafka
+
+spark-submit 
+--packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0 
+consumer/consumer_spark.py
+
+NOTE:
+Spark is optional. If Spark is not running, the dashboard will automatically
+consume from the orders topic and calculate metrics locally in Python.
+
+## TERMINAL 5 - START FLASK DASHBOARD
+
+cd /mnt/c/Users/VIRAJ\ M/Desktop/code/KAFKA_new/restaurant_demand_kafka
+
+python dashboard/app.py
+
+## DASHBOARD URL
+
+http://localhost:5000
+
+## TERMINAL 6 - START PRODUCER
+
+cd /mnt/c/Users/VIRAJ\ M/Desktop/code/KAFKA_new/restaurant_demand_kafka
+
+# Exactly-once mode
+
+python producer/producer.py exactly_once
+
+# Alternative modes:
+
+# python producer/producer.py at_most_once
+
+# python producer/producer.py at_least_once
+
+## AI COPILOT DEMO
+
+1. Open http://localhost:5000
+2. Navigate to "AI Operations Copilot"
+3. Click an anomaly button:
+
+   * Kitchen Bottleneck
+   * Courier Shortage
+   * Any other available anomaly
+4. Producer starts generating delayed/cancelled events.
+5. When thresholds are exceeded (e.g. Delay Rate > 20%):
+
+   * Incident Analyst Agent runs
+   * Strategy Planner Agent runs
+6. Diagnosis and action plans appear on the dashboard.
+
+## FULL STARTUP ORDER
+
+1. Zookeeper
+2. Kafka Broker
+3. Create Topics (first run only)
+4. Spark Consumer (optional)
+5. Flask Dashboard
+6. Producer
+7. Open Browser Dashboard

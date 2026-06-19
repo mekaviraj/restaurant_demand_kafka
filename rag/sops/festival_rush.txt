@@ -1,0 +1,15 @@
+STANDARD OPERATING PROCEDURE: FESTIVAL RUSH (HIGH DEMAND EVENTS)
+ID: SOP-OPS-004
+Status: Approved
+
+Operational Context:
+This SOP is activated during festivals or major sports events (e.g. Diwali, IPL Finals) when the order inflow spikes by over 50%, causing prep delays and a courier deficit.
+
+Corrective Actions:
+1. Limit order throughput by adding a 5-minute stagger interval on online aggregators to smooth out incoming demand.
+2. Pre-prep high-demand items (e.g., standard boxes, starters) in large batches before the rush hour begins.
+3. Switch delivery radius to a compact 3km zone to ensure quick courier turnaround times.
+4. Offer custom festival combo packs to incentivize bulk orders and streamline kitchen lines.
+
+Expected Recovery Improvement: 25% improvement in peak throughput and 15% reduction in average prep time.
+SOP Author: Regional Commercial Manager

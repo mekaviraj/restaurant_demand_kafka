@@ -1,0 +1,15 @@
+STANDARD OPERATING PROCEDURE: INVENTORY SHORTAGE (RAW INGREDIENT DEFICIT)
+ID: SOP-OPS-005
+Status: Approved
+
+Operational Context:
+This SOP is activated when the Cancellation Rate is high (above 20%) due to out-of-stock items, or when key kitchen ingredients are depleted.
+
+Corrective Actions:
+1. Conduct an immediate automated count of stock in the walk-in cooler and pantry.
+2. Mark depleted items as "Unavailable" on all digital delivery platforms to prevent future customer cancellations.
+3. Automatically offer pre-approved substitutes to customers (e.g., offer paneer dishes if chicken is out, or alternative beverages).
+4. Direct nearest local vendor supply orders via express courier services for emergency replenishment of core ingredients.
+
+Expected Recovery Improvement: 35% reduction in customer cancellation rates.
+SOP Author: Inventory Control Lead

@@ -1,0 +1,44 @@
+I have a Python project that simulates restaurant delivery operations using Kafka, Spark (optional fallback), Flask, and AI Agents. I am running this in an Ubuntu (WSL) terminal on Windows. 
+
+Here is my project structure:
+restaurant_demand_kafka/
+├── agents/
+│   ├── analyst.py             # Incident Analyst Agent (Anomaly detection)
+│   └── planner.py             # Strategy Planner Agent (Mitigation planning)
+├── tools/
+│   ├── metrics_tool.py        # Queries current metrics
+│   ├── rag_tool.py            # RAG Cosine search on SOPs
+│   └── memory_tool.py         # SQLite memory database interface
+├── rag/
+│   ├── sops/                  # Knowledge base SOP text files
+│   └── vector_db.py           # Pure-Python TF-IDF vector database
+├── memory/
+│   └── database.py            # SQLite database initialization
+├── dashboard/
+│   ├── app.py                 # Flask server (contains Kafka Consumer thread)
+│   └── templates/
+│       └── index.html         # HTML Dashboard
+└── producer/
+    └── producer.py            # Kafka Producer (simulates orders & anomalies)
+
+Tech Stack:
+- Python 3.9+
+- confluent-kafka (Kafka Client)
+- Flask (Web Framework)
+- PySpark 3.5.0 (Optional Stream Processing)
+- sqlite3 (Built-in memory store)
+
+---
+
+### The Issue I am Facing:
+
+1. **Command I ran:**
+   [Paste the exact command here, e.g. python dashboard/app.py]
+
+2. **The Error/Traceback from terminal:**
+   [Paste the full traceback/error message here]
+
+3. **Relevant Code Section:**
+   [Paste the imports or code block of the file causing the error, e.g., the top 20 lines of dashboard/app.py]
+
+Please help me identify the syntax/import mistake and provide the corrected code.
